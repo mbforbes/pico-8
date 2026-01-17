@@ -1,13 +1,30 @@
 function _init()
     music(4, 1000)
-    -- enable mouse
-    poke(0x5f2d, 0x3)
 
-    -- settings
-    defaultcol = 9
+    chunks = {}
+    for offset in all({ 0, -128 }) do
+        chunk = {
+            offset = offset,
+            rows = {}
+        }
+        -- should be 7, but we'll do 8 to avoid tearing probs b/c of my bad logic
+        for i = 0, 8 do
+            add(chunk.rows, { celX = 0, celY = i % 2, celW = 4, celH = 2, localY = i * 16 })
+        end
+        add(chunks, chunk)
+    end
 
-    -- state
-    col = defaultcol
+    DEFAULT_SPEED = 1
+
+    speed = DEFAULT_SPEED
+    car = {
+        p = { x = 64, y = 64 },
+        xlim = { low = 10, high = 110 },
+        ylim = { low = 10, high = 108 }
+    }
+    roadX = { low = 47, high = 77 }
+    cam = { x = 0, y = 0 }
+    wobble = { dir = 1, delta = 1, lim = 2 }
 end
 
 -- point p {x,y}
@@ -19,34 +36,57 @@ function intersects(p, b)
                 and p.y <= bounds[4])
 end
 
-function _update()
-    mouse = { x = stat(32), y = stat(33) }
-    bounds = { 14, 20, 114, 40 }
-
-    -- left pointer = x = btn 5
-    if btnp(5) then
-        col = 8
-        if intersects(mouse, bounds) then
-            col = 14
-            -- todo: change track
-            music(0)
-        end
-    else
-        col = defaultcol
+function _update60()
+    for chunk in all(chunks) do
+        chunk.offset += speed
+        if (chunk.offset >= 128) chunk.offset = -128
     end
+
+    speed_mul = 1
+    if car.p.x < roadX.low or car.p.x > roadX.high then
+        speed_mul = 0.5
+        speed = DEFAULT_SPEED * speed_mul
+        if abs(cam.x) > wobble.lim then
+            wobble.dir *= -1
+        end
+        cam.x += wobble.dir * wobble.delta
+    else
+        speed = DEFAULT_SPEED
+        cam.x = 0
+    end
+
+    -- move
+    if btn(0) then
+        car.p.x -= 1 * speed_mul
+    elseif btn(1) then
+        car.p.x += 1 * speed_mul
+    end
+    if btn(2) then
+        car.p.y -= 1 * speed_mul
+    elseif btn(3) then
+        car.p.y += 1 * speed_mul
+    end
+    -- clamp
+    car.p.x = min(max(car.xlim.low, car.p.x), car.xlim.high)
+    car.p.y = min(max(car.ylim.low, car.p.y), car.ylim.high)
 end
 
 function _draw()
-    cls(1)
+    cls(3)
 
-    -- draw hit area
-    bcol = 12
-    if intersects(mouse, bounds) then
-        bcol = 3
+    camera(cam.x, cam.y)
+
+    print(car.p.x)
+
+    for chunk in all(chunks) do
+        for rr in all(chunk.rows) do
+            -- print(rr.localY)
+            map(rr.celX, rr.celY, 50, chunk.offset + rr.localY, rr.celW, rr.celH)
+        end
     end
-    rectfill(14, 20, 114, 40, bcol)
+    -- map(0, 3, 50, y, 4, 2)
 
-    -- draw mouse
-    -- x, y, r, color
-    circfill(stat(32), stat(33), 8, col)
+    -- draw car (2 parts)
+    spr(191, car.p.x, car.p.y)
+    spr(207, car.p.x, car.p.y + 8)
 end
