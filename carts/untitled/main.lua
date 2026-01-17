@@ -1,3 +1,7 @@
+-- notes:
+-- kenney spritesheet is 24 x 15 = 360 sprites
+-- pico-8 limit is 128 + 128 (shared) = 256 sprites
+
 function _init()
     music(4, 1000)
 
@@ -9,7 +13,7 @@ function _init()
         }
         -- should be 7, but we'll do 8 to avoid tearing probs b/c of my bad logic
         for i = 0, 8 do
-            add(chunk.rows, { celX = 0, celY = i % 2, celW = 4, celH = 2, localY = i * 16 })
+            add(chunk.rows, { celX = 0, celY = (i % 2) * 2, celW = 4, celH = 2, localY = i * 16 })
         end
         add(chunks, chunk)
     end
@@ -30,10 +34,10 @@ end
 -- point p {x,y}
 -- bounds b {x0, y0, x1, y1}
 function intersects(p, b)
-    return (p.x >= bounds[1]
-                and p.y >= bounds[2]
-                and p.x <= bounds[3]
-                and p.y <= bounds[4])
+    return (p.x >= b[1]
+                and p.y >= b[2]
+                and p.x <= b[3]
+                and p.y <= b[4])
 end
 
 function _update60()
@@ -72,19 +76,15 @@ function _update60()
 end
 
 function _draw()
-    cls(3)
+    cls(13)
 
     camera(cam.x, cam.y)
 
-    print(car.p.x)
-
     for chunk in all(chunks) do
         for rr in all(chunk.rows) do
-            -- print(rr.localY)
             map(rr.celX, rr.celY, 50, chunk.offset + rr.localY, rr.celW, rr.celH)
         end
     end
-    -- map(0, 3, 50, y, 4, 2)
 
     -- draw car (2 parts)
     spr(191, car.p.x, car.p.y)
