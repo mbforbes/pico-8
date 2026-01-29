@@ -8,22 +8,28 @@ function _init()
 
   --configure items FIRST to ensure they aren't detected as walls
   --dots (flag 6, clear flag 0)
-  fset(4, 6, true) fset(4, 0, false)
-  
+  fset(4, 6, true)
+  fset(4, 0, false)
+
   --fruits (flag 7, clear flag 0)
-  for i=32,35 do fset(i, 7, true) fset(i, 0, false) end
+  for i = 32, 35 do
+    fset(i, 7, true) fset(i, 0, false)
+  end
 
   --detect wall sprite (flag 0)
-  wall_spr = 64 -- default fallback (0x40)
-  for i=1,255 do
-    if fget(i, 0) then wall_spr = i break end
+  wall_spr = 64
+  -- default fallback (0x40)
+  for i = 1, 255 do
+    if fget(i, 0) then
+      wall_spr = i break
+    end
   end
 
   --load high score
   cartdata("picomanrunner")
   hi_score = dget(0)
-  
-  start_level(1)
+
+  start_level(20)
 end
 
 --game stats
@@ -33,7 +39,7 @@ game_time = 0
 curr_level = 1
 max_levels = 20
 game_won = false
-door_pos = {x=15, y=7}
+door_pos = { x = 15, y = 7 }
 
 --player object
 player = {
@@ -92,7 +98,7 @@ function new_ghost(_id, _x, _y, _type_idx)
     speed = 1,
     home = { x = _x, y = _y },
     released = true,
-    release_time = 0, 
+    release_time = 0,
     target = { x = 0, y = 0 },
     hide_timer = 0,
     type_idx = _type_idx
@@ -122,7 +128,7 @@ current_mode = mode_schedule[1].mode
 -- Level Generation
 function start_level(n)
   curr_level = n
-  
+
   if n > max_levels then
     game_won = true
     return
@@ -131,27 +137,27 @@ function start_level(n)
   dots = {}
   pellets = {}
   ghosts = {}
-  
+
   -- Clear map
-  for x=0,15 do
-    for y=0,15 do
+  for x = 0, 15 do
+    for y = 0, 15 do
       mset(x, y, 0)
     end
   end
-  
+
   generate_level(n)
   scan_map_for_items()
   spawn_enemies(n)
-  
+
   -- Reset Player velocity
   player.h_speed = 0
   player.v_speed = 0
   player.dir = -1
   player.next_dir = -1
   player.anim.frame = 1
-  
+
   game_time = 0
-  
+
   -- Reset Ghost Modes
   mode_index = 1
   current_mode = mode_schedule[1].mode
@@ -162,65 +168,66 @@ function generate_level(n)
   -- Map Dimensions based on level (start small, max 15)
   local size = min(9 + n, 15)
   local w, h = size, size
-  
+
   -- Draw Borders
-  for x=0,w do
+  for x = 0, w do
     mset(x, 0, wall_spr)
     mset(x, h, wall_spr)
   end
-  for y=0,h do
+  for y = 0, h do
     mset(0, y, wall_spr)
     mset(w, y, wall_spr)
   end
-  
+
   -- Entrance and Exit
-  local start_y = flr(h/2)
-  mset(1, start_y, 0) 
+  local start_y = flr(h / 2)
+  mset(1, start_y, 0)
   player.x = 8
   player.y = start_y * 8
-  
-  local exit_y = flr(h/2)
-  mset(w, exit_y, wall_spr) -- Blocked Exit
-  door_pos = {x=w, y=exit_y}
-  
+
+  local exit_y = flr(h / 2)
+  mset(w, exit_y, wall_spr)
+  -- Blocked Exit
+  door_pos = { x = w, y = exit_y }
+
   -- Place Geometric Obstacles (Rectangles)
-  local num_obstacles = 2 + flr(n/2)
-  for i=1, num_obstacles do
-     local ox = 2 + flr(rnd(w-4))
-     local oy = 2 + flr(rnd(h-4))
-     local ow = 1 + flr(rnd(3)) -- width 1-3
-     local oh = 1 + flr(rnd(3)) -- height 1-3
-     
-     for xx=ox, min(ox+ow, w-1) do
-       for yy=oy, min(oy+oh, h-1) do
-         mset(xx, yy, wall_spr)
-       end
-     end
+  local num_obstacles = 2 + flr(n / 2)
+  for i = 1, num_obstacles do
+    local ox = 2 + flr(rnd(w - 4))
+    local oy = 2 + flr(rnd(h - 4))
+    local ow = 1 + flr(rnd(3)) -- width 1-3
+    local oh = 1 + flr(rnd(3)) -- height 1-3
+
+    for xx = ox, min(ox + ow, w - 1) do
+      for yy = oy, min(oy + oh, h - 1) do
+        mset(xx, yy, wall_spr)
+      end
+    end
   end
 
   -- Ensure path exists
-  if not check_path(1, start_y, w-1, exit_y, w, h) then
-     -- If blocked, clear a central corridor
-     for x=1, w-1 do
-        mset(x, start_y, 0)
-     end
+  if not check_path(1, start_y, w - 1, exit_y, w, h) then
+    -- If blocked, clear a central corridor
+    for x = 1, w - 1 do
+      mset(x, start_y, 0)
+    end
   end
-  
+
   -- Place Fruits (before scan so they become items)
   local num_ghosts = 0
   if n >= 3 then
-    num_ghosts = 1 + flr((n - 3) / 5)
+    num_ghosts = 1 + flr((n - 3) / 2)
   end
   local num_fruits = 0
   if num_ghosts > 0 then
     num_fruits = flr((num_ghosts + 2) / 3)
   end
-  
-  for i=1, num_fruits do
+
+  for i = 1, num_fruits do
     local fx, fy
     repeat
-      fx = 2 + flr(rnd(w-3))
-      fy = 1 + flr(rnd(h-2))
+      fx = 2 + flr(rnd(w - 3))
+      fy = 1 + flr(rnd(h - 2))
     until not fget(mget(fx, fy), 0)
     local fspr = 32 + flr(rnd(4))
     mset(fx, fy, fspr)
@@ -228,9 +235,9 @@ function generate_level(n)
 
   -- Place Dots
   local dot_chance = 0.3
-  for x=1, w-1 do
-    for y=1, h-1 do
-      if mget(x,y) == 0 then
+  for x = 1, w - 1 do
+    for y = 1, h - 1 do
+      if mget(x, y) == 0 then
         if rnd() < dot_chance then
           mset(x, y, 4) -- Sprite 4 (Dot)
         end
@@ -241,24 +248,24 @@ end
 
 function check_path(sx, sy, ex, ey, w, h)
   local q = {}
-  add(q, {x=sx, y=sy})
+  add(q, { x = sx, y = sy })
   local visited = {}
-  visited[sx..","..sy] = true
-  
+  visited[sx .. "," .. sy] = true
+
   local head = 1
   while head <= #q do
     local curr = q[head]
     head += 1
-    
+
     if curr.x == ex and curr.y == ey then return true end
-    
-    local neighbors = {{x=1,y=0}, {x=-1,y=0}, {x=0,y=1}, {x=0,y=-1}}
+
+    local neighbors = { { x = 1, y = 0 }, { x = -1, y = 0 }, { x = 0, y = 1 }, { x = 0, y = -1 } }
     for n in all(neighbors) do
       local nx, ny = curr.x + n.x, curr.y + n.y
       if nx >= 1 and nx <= w and ny >= 1 and ny <= h then
-        if not fget(mget(nx, ny), 0) and not visited[nx..","..ny] then
-           visited[nx..","..ny] = true
-           add(q, {x=nx, y=ny})
+        if not fget(mget(nx, ny), 0) and not visited[nx .. "," .. ny] then
+          visited[nx .. "," .. ny] = true
+          add(q, { x = nx, y = ny })
         end
       end
     end
@@ -269,22 +276,22 @@ end
 function spawn_enemies(n)
   local num_ghosts = 0
   if n >= 3 then
-    num_ghosts = 1 + flr((n - 3) / 5)
+    num_ghosts = 1 + flr((n - 3) / 2)
   end
-  
+
   local size = min(9 + n, 15)
   local w, h = size, size
-  
-  for i=0, num_ghosts-1 do
+
+  for i = 0, num_ghosts - 1 do
     local type_idx = i % 4
     local gx, gy
     repeat
-      gx = 2 + flr(rnd(w-3))
-      gy = 1 + flr(rnd(h-2))
+      gx = 2 + flr(rnd(w - 3))
+      gy = 1 + flr(rnd(h - 2))
     until not fget(mget(gx, gy), 0)
     -- dots are already cleared by scan_map, so space is 0
-    
-    add(ghosts, new_ghost(i, gx*8, gy*8, type_idx))
+
+    add(ghosts, new_ghost(i, gx * 8, gy * 8, type_idx))
   end
 end
 
@@ -292,11 +299,13 @@ function scan_map_for_items()
   for i = 0, 15 do
     for j = 0, 15 do
       local _spr = mget(i, j)
-      if fget(_spr, 6) then -- dot
+      if fget(_spr, 6) then
+        -- dot
         add(dots, new_dot(#dots, i * 8, j * 8))
         mset(i, j, 0)
       end
-      if fget(_spr, 7) then -- pellet/fruit
+      if fget(_spr, 7) then
+        -- pellet/fruit
         add(pellets, new_pellet(#pellets, i * 8, j * 8, _spr))
         mset(i, j, 0)
       end
@@ -337,20 +346,24 @@ function clamp_position(obj)
 end
 
 function can_move_vert(obj)
-  return true 
+  return true
 end
 
 function update_ghost_target(g)
-  if g.type_idx == 0 then -- blinky
+  if g.type_idx == 0 then
+    -- blinky
     g.target.x = player.x
     g.target.y = player.y
-  elseif g.type_idx == 1 then -- pinky
+  elseif g.type_idx == 1 then
+    -- pinky
     g.target.x = player.x + player.h_speed * 16
     g.target.y = player.y + player.v_speed * 16
-  elseif g.type_idx == 2 then -- inky
+  elseif g.type_idx == 2 then
+    -- inky
     g.target.x = player.x
     g.target.y = player.y - 16
-  elseif g.type_idx == 3 then -- clyde
+  elseif g.type_idx == 3 then
+    -- clyde
     g.target.x = 0
     g.target.y = 120
   end
@@ -369,11 +382,13 @@ function can_move(g, dir)
   local ny = g.y + dir.y * 8
   local tx = flr((nx + 4) / 8)
   local ty = flr((ny + 4) / 8)
-  
+
   if tx < 0 or tx > 15 or ty < 0 or ty > 15 then return false end
   local spr = mget(tx, ty)
-  if fget(spr, 0) then return false end -- wall
-  if fget(spr, 1) then return false end -- gate
+  if fget(spr, 0) then return false end
+  -- wall
+  if fget(spr, 1) then return false end
+  -- gate
   return true
 end
 
@@ -430,7 +445,7 @@ function move_ghost(g)
   if g.mode == 2 then
     g.hide_timer -= 1
     if g.hide_timer <= 0 then
-      g.mode = current_mode 
+      g.mode = current_mode
       g.frame = g.orig_frame
     end
     local gx = g.x + 4
@@ -439,11 +454,11 @@ function move_ghost(g)
     local py = player.y + 4
     if abs(gx - px) < 6 and abs(gy - py) < 6 then
       score += g.value
-      g.mode = 3 
-      g.frame = 27 
+      g.mode = 3
+      g.frame = 27
       g.hide_timer = 0
-      g.home = {x=60, y=-20} -- Banishment target
-      sfx(0) 
+      g.home = { x = 60, y = -20 } -- Banishment target
+      sfx(0)
     end
   else
     local gx = g.x + 4
@@ -451,9 +466,9 @@ function move_ghost(g)
     local px = player.x + 4
     local py = player.y + 4
     if abs(gx - px) < 6 and abs(gy - py) < 6 and g.mode ~= 3 then
-       sfx(1)
-       start_level(curr_level)
-       return
+      sfx(1)
+      start_level(curr_level)
+      return
     end
   end
 
@@ -466,13 +481,13 @@ function move_ghost(g)
         update_ghost_target(g)
         ghost_chase(g, g.target.x, g.target.y)
       elseif g.mode == 2 then
-        ghost_search(g) 
+        ghost_search(g)
       elseif g.mode == 3 then
         if abs(g.x - g.home.x) < 4 and abs(g.y - g.home.y) < 4 then
-            del(ghosts, g)
-            return
+          del(ghosts, g)
+          return
         else
-            ghost_retreat(g)
+          ghost_retreat(g)
         end
       end
       local d = dirs[g.dir]
@@ -488,7 +503,6 @@ function move_ghost(g)
   g.y += g.dy * g.speed
   if g.mode != 3 then clamp_position(g) end
 end
-
 
 function eat_dot()
   local px = flr((player.x + 4) / 8)
@@ -515,7 +529,7 @@ function eat_dot()
         if g.mode ~= 3 then
           g.mode = 2
           g.frame = 11
-          g.hide_timer = 5 * 30 
+          g.hide_timer = 5 * 30
         end
       end
       break
@@ -536,8 +550,8 @@ end
 
 function move_player_grid()
   local function get_vec(idx)
-    if idx < 1 or idx > 4 then return {x=0,y=0} end
-    return dirs[idx] 
+    if idx < 1 or idx > 4 then return { x = 0, y = 0 } end
+    return dirs[idx]
   end
 
   local d_curr = get_vec(player.dir)
@@ -546,22 +560,25 @@ function move_player_grid()
   -- 1. Handle Immediate Reversal
   if player.dir ~= -1 and player.next_dir ~= -1 then
     if d_curr.x == -d_next.x and d_curr.y == -d_next.y then
-       player.dir = player.next_dir
-       player.next_dir = -1
-       player.h_speed = d_next.x * player.speed
-       player.v_speed = d_next.y * player.speed
-       d_curr = d_next
-       
-       if d_next.x < 0 then player.anim.flip_x = true 
-       elseif d_next.x > 0 then player.anim.flip_x = false end
-       if d_next.y > 0 then player.anim.flip_y = true end
-       if d_next.y < 0 then player.anim.flip_y = false end
-       
-       if player.h_speed ~= 0 then
-          player.anim.first = 1 player.anim.last = 3 player.anim.frame = 1
-       else
-          player.anim.first = 17 player.anim.last = 19 player.anim.frame = 17
-       end
+      player.dir = player.next_dir
+      player.next_dir = -1
+      player.h_speed = d_next.x * player.speed
+      player.v_speed = d_next.y * player.speed
+      d_curr = d_next
+
+      if d_next.x < 0 then
+        player.anim.flip_x = true
+      elseif d_next.x > 0 then
+        player.anim.flip_x = false
+      end
+      if d_next.y > 0 then player.anim.flip_y = true end
+      if d_next.y < 0 then player.anim.flip_y = false end
+
+      if player.h_speed ~= 0 then
+        player.anim.first = 1 player.anim.last = 3 player.anim.frame = 1
+      else
+        player.anim.first = 17 player.anim.last = 19 player.anim.frame = 17
+      end
     end
   end
 
@@ -569,53 +586,60 @@ function move_player_grid()
   if player.x % 8 == 0 and player.y % 8 == 0 then
     local cx = flr(player.x / 8)
     local cy = flr(player.y / 8)
-    
+
     if player.next_dir ~= -1 then
-       local turn_tx = cx + d_next.x
-       local turn_ty = cy + d_next.y
-       
-       if not fget(mget(turn_tx, turn_ty), 0) then
-          player.dir = player.next_dir
-          player.next_dir = -1
-          player.h_speed = d_next.x * player.speed
-          player.v_speed = d_next.y * player.speed
-          
-          if d_next.x < 0 then player.anim.flip_x = true 
-          elseif d_next.x > 0 then player.anim.flip_x = false end
-          if d_next.y > 0 then player.anim.flip_y = true end
-          if d_next.y < 0 then player.anim.flip_y = false end
-          
-          if player.h_speed ~= 0 then
-             player.anim.first = 1 player.anim.last = 3 player.anim.frame = 1
-          else
-             player.anim.first = 17 player.anim.last = 19 player.anim.frame = 17
-          end
-       end
+      local turn_tx = cx + d_next.x
+      local turn_ty = cy + d_next.y
+
+      if not fget(mget(turn_tx, turn_ty), 0) then
+        player.dir = player.next_dir
+        player.next_dir = -1
+        player.h_speed = d_next.x * player.speed
+        player.v_speed = d_next.y * player.speed
+
+        if d_next.x < 0 then
+          player.anim.flip_x = true
+        elseif d_next.x > 0 then
+          player.anim.flip_x = false
+        end
+        if d_next.y > 0 then player.anim.flip_y = true end
+        if d_next.y < 0 then player.anim.flip_y = false end
+
+        if player.h_speed ~= 0 then
+          player.anim.first = 1 player.anim.last = 3 player.anim.frame = 1
+        else
+          player.anim.first = 17 player.anim.last = 19 player.anim.frame = 17
+        end
+      end
     end
-    
+
     -- Check wall in current direction
     if player.h_speed ~= 0 or player.v_speed ~= 0 then
-       local dx = 0
-       local dy = 0
-       if player.h_speed > 0 then dx = 1 elseif player.h_speed < 0 then dx = -1 end
-       if player.v_speed > 0 then dy = 1 elseif player.v_speed < 0 then dy = -1 end
-       
-       local next_tx = cx + dx
-       local next_ty = cy + dy
-       if fget(mget(next_tx, next_ty), 0) then
-          player.h_speed = 0
-          player.v_speed = 0
-       end
+      local dx = 0
+      local dy = 0
+      if player.h_speed > 0 then
+        dx = 1
+      elseif player.h_speed < 0 then
+        dx = -1
+      end
+      if player.v_speed > 0 then
+        dy = 1
+      elseif player.v_speed < 0 then
+        dy = -1
+      end
+
+      local next_tx = cx + dx
+      local next_ty = cy + dy
+      if fget(mget(next_tx, next_ty), 0) then
+        player.h_speed = 0
+        player.v_speed = 0
+      end
     end
   end
-  
+
   player.x += player.h_speed
   player.y += player.v_speed
 end
-
-
-
-
 
 function _update()
   if game_won then return end
@@ -625,7 +649,7 @@ function _update()
     mset(door_pos.x, door_pos.y - 1, 0)
     mset(door_pos.x, door_pos.y + 1, 0)
   end
-  
+
   if player.x > door_pos.x * 8 then
     start_level(curr_level + 1)
     return
@@ -647,10 +671,14 @@ function _update()
   end
 
   -- Grid Input Logic
-  if btn(0) then player.next_dir = 2 -- Left
-  elseif btn(1) then player.next_dir = 1 -- Right
-  elseif btn(2) then player.next_dir = 4 -- Up
-  elseif btn(3) then player.next_dir = 3 -- Down
+  if btn(0) then
+    player.next_dir = 2 -- Left
+  elseif btn(1) then
+    player.next_dir = 1 -- Right
+  elseif btn(2) then
+    player.next_dir = 4 -- Up
+  elseif btn(3) then
+    player.next_dir = 3 -- Down
   end
 
   move_player_grid()
@@ -674,7 +702,7 @@ function _draw()
   cls()
   if game_won then
     print("YOU WIN!", 50, 60, 7)
-    print("SCORE: "..score, 48, 70, 7)
+    print("SCORE: " .. score, 48, 70, 7)
     return
   end
 
