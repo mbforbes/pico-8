@@ -1,0 +1,23 @@
+we've got the pico-8 game picomanrunner here that's a fairly generic pacman clone, though it's only got one level and the ghosts killing the player isn't implemented
+
+i want you to modify the game (keep all code changes in picomanrunner.lua; don't worry about editing sprites or music, we'll work with what we have) to turn this into a pacman/infinite runner hybrid. here's how it should work:
+- we'll generate a level deterministically that should have few obstacles
+- the player character (pacman) starts on the left center
+- the exit is on the right center, but blocked
+- the player must eat all the dots for the door to open
+- when present, enemies try to kill the player
+- the player has unlimited lives
+- dying resets the current level (not the game)
+- as levels progress, there are more obstacles. the levels should be quite open, so only very late levels (20+) will resemble the density and complexity of what is currently the pacman world
+- the dots should not completely fill the level screen, as this would be extremely cumbersome to eat through because the levels are more open
+- the first couple levels should have no enemies
+- then, 5 levels should have 1 enemy
+- every 5 levels, add another enemy
+- the enemies are the ghosts from pacman, and have their (as close as possible to make sense) AI behaviors
+- keep a consistent enemy type per 5 levels. so start with a single color, keep them for levels 3 through 7, then on level 8 add a second color, etc.
+- there should be fruit per level that can be eaten to make the enemies capturable (as currently implemented it uses sprite 5, but we should use sprites 32, 33, 34, and 35 as options for this). there should be 1 fruit for every 3 ghosts. round up (so on the 4th ghost, you get 2 fruits.) of course, before any ghosts, no fruits.
+- let's start by having 20 levels be generated, with a win screen happening after. the code should be extensible though if we want to add any more levels
+- because we'll be generating the levels with code, you wouldn't need to update the maps
+
+read through the lua and .p8 data cartridge first.
+then, if you have any questions before beginning, or need any more information, please ask. i can provide information about the sprites if you can't figure it out from the code and data file.
