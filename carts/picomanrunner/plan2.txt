@@ -1,0 +1,13 @@
+we're going to add some sound effects and music to this game by modifying the picomanrunner.p8 cartridge (sfx and music data).
+
+i've placed specifications in the following files:
+
+- `memory-layout.md` describes the (text-based) .p8 data cartridge format
+- `manual-sfx-music.md` contains excerpts from the pico-8 user manual about how sfx and music are specified. (note that much of the info there is about how to use the pico-8 GUI to create music, which you will not be doing. you will be writing the data directly.)
+
+read both of those files now.
+
+implement some fun funky upbeat music with a beat, keep the volume a bit low. have it play throughout the game.
+
+old:
+we'll start by adding a new sound effect. this should be a happy little success sound, and it should play when the gate is opened in a level (after all pellets are eaten). implement this sfx, and edit the picomanrunner.lua file (where all the code lives) to hook it up to the game logic.

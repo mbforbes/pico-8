@@ -29,7 +29,7 @@ function _init()
   cartdata("picomanrunner")
   hi_score = dget(0)
 
-  start_level(20)
+  start_level(1)
 end
 
 --game stats
@@ -137,6 +137,8 @@ function start_level(n)
   dots = {}
   pellets = {}
   ghosts = {}
+  gate_open_sfx_played = false
+  dead_timer = 0
 
   -- Clear map
   for x = 0, 15 do
@@ -466,8 +468,8 @@ function move_ghost(g)
     local px = player.x + 4
     local py = player.y + 4
     if abs(gx - px) < 6 and abs(gy - py) < 6 and g.mode ~= 3 then
-      sfx(1)
-      start_level(curr_level)
+      sfx(2, 3)
+      dead_timer = 30
       return
     end
   end
@@ -644,7 +646,19 @@ end
 function _update()
   if game_won then return end
 
+  if dead_timer > 0 then
+    dead_timer -= 1
+    if dead_timer == 0 then
+      start_level(curr_level)
+    end
+    return
+  end
+
   if #dots == 0 and #pellets == 0 then
+    if not gate_open_sfx_played then
+      sfx(1)
+      gate_open_sfx_played = true
+    end
     mset(door_pos.x, door_pos.y, 0)
     mset(door_pos.x, door_pos.y - 1, 0)
     mset(door_pos.x, door_pos.y + 1, 0)
