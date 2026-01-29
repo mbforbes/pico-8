@@ -30,6 +30,7 @@ function _init()
   hi_score = dget(0)
 
   start_level(1)
+  music(0)
 end
 
 --game stats

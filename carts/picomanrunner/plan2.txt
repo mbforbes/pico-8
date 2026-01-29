@@ -7,7 +7,7 @@ i've placed specifications in the following files:
 
 read both of those files now.
 
-implement some fun funky upbeat music with a beat, keep the volume a bit low. have it play throughout the game.
+your task: implement some fun funky upbeat music with a beat, bass, and melody. keep the volume a bit low. have it play throughout the game.
 
 old:
 we'll start by adding a new sound effect. this should be a happy little success sound, and it should play when the gate is opened in a level (after all pellets are eaten). implement this sfx, and edit the picomanrunner.lua file (where all the code lives) to hook it up to the game logic.
